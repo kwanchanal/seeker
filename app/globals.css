@@ -979,7 +979,22 @@ button:focus-visible {
   }
 
   .hero-copy h1 {
+    animation: none;
+    background: none;
+    color: #0b9fb9;
     font-size: clamp(49px, 16.6vw, 98px);
+  }
+
+  .hero-line:nth-child(2) > span {
+    color: #26b6a5;
+  }
+
+  .hero-line:nth-child(3) > span {
+    color: #60bd80;
+  }
+
+  .hero-line > span {
+    animation: none;
   }
 
   .hero-panel {
