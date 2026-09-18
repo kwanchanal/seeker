@@ -974,6 +974,10 @@ button:focus-visible {
     padding: 84px 16px 20px;
   }
 
+  .kicker {
+    font-size: 15px;
+  }
+
   .hero-backdrop {
     background-size: 140% 130%, 165% 125%, 150% 130%, 160% 135%, 145% 135%, 145% 120%;
   }
@@ -998,11 +1002,15 @@ button:focus-visible {
   }
 
   .hero-panel {
-    min-height: 330px;
+    min-height: clamp(380px, 90vw, 520px);
   }
 
   .hero-panel .hero-phone {
     width: 50%;
+  }
+
+  .hero-bottom {
+    margin-top: 40px;
   }
 
   .section-pad {
