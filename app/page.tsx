@@ -100,7 +100,7 @@ const campaigns: Campaign[] = [
   }
 ];
 
-const heroStills = campaigns.flatMap((campaign) => campaign.stills);
+const heroStills = campaigns.flatMap((campaign) => campaign.stills.slice(0, 2));
 
 const affiliateStills = [
   "/assets/extracted/pdf-p14-img04.png",
@@ -126,26 +126,32 @@ const assetPath = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH || ""}$
 export default function Home() {
   const [activeCampaign, setActiveCampaign] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [heroImageIndex, setHeroImageIndex] = useState(0);
   const campaign = campaigns[activeCampaign];
 
   const repeatedBrands = useMemo(() => [...brands, ...brands], []);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let timer: ReturnType<typeof setInterval> | undefined;
-    const updateTimer = () => {
-      if (timer) clearInterval(timer);
-      if (!reduceMotion.matches) {
-        timer = setInterval(() => setHeroImageIndex((index) => (index + 1) % heroStills.length), 3200);
-      }
-    };
-    updateTimer();
-    reduceMotion.addEventListener("change", updateTimer);
-    return () => {
-      if (timer) clearInterval(timer);
-      reduceMotion.removeEventListener("change", updateTimer);
-    };
+    if (reduceMotion.matches) return;
+
+    const timer = setInterval(() => {
+      setActiveCampaign((index) => (index + 1) % campaigns.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reduceMotion.matches) return;
+
+    let categoryIndex = -1;
+    const timer = setInterval(() => {
+      categoryIndex = (categoryIndex + 1) % categories.length;
+      setActiveCategory(categories[categoryIndex]);
+    }, 450);
+
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -227,12 +233,42 @@ export default function Home() {
             </h1>
           </div>
           <div className="hero-panel" aria-label="Campaign visuals from SEEKER presentation">
+            <div className="hero-desktop-stream" aria-hidden="true">
+              {[0, 1, 2].map((column) => {
+                const columnStills = heroStills.slice(column * 4, column * 4 + 4);
+                return (
+                  <div className="hero-stream-column" key={column}>
+                    <div className="hero-stream-track">
+                      {[0, 1].map((repeat) => (
+                        <div className="hero-stream-group" key={repeat}>
+                          {columnStills.map((still) => (
+                            <div className="campaign-phone hero-stream-phone" key={`${repeat}-${still}`}>
+                              <div className="campaign-phone-screen">
+                                <img src={assetPath(still)} alt="" />
+                              </div>
+                              <span className="campaign-phone-notch" aria-hidden="true" />
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
             {[-1, 0, 1].map((offset) => {
-              const still = heroStills[(heroImageIndex + offset + heroStills.length) % heroStills.length];
+              const start = (offset + 1) * 4;
+              const orderedStills = [...heroStills.slice(start), ...heroStills.slice(0, start)];
               return (
                 <div className={`campaign-phone hero-phone hero-phone-${offset + 1}`} key={offset}>
                   <div className="campaign-phone-screen">
-                    <img className="hero-phone-image" src={assetPath(still)} alt="" key={still} />
+                    <div className="hero-feed-track" aria-hidden="true">
+                      {[...orderedStills, ...orderedStills].map((still, index) => (
+                        <div className="hero-feed-frame" key={`${still}-${index}`}>
+                          <img src={assetPath(still)} alt="" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <span className="campaign-phone-notch" aria-hidden="true" />
                 </div>
