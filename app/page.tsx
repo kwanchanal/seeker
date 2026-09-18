@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 type Campaign = {
   name: string;
   category: string;
-  image: string;
   stills: string[];
 };
 
@@ -72,39 +71,43 @@ const campaigns: Campaign[] = [
   {
     name: "Watson Club KOL Campaign",
     category: "Retail beauty",
-    image: "/assets/extracted/pdf-p10-img02.png",
     stills: ["/assets/extracted/pdf-p10-img02.png", "/assets/extracted/pdf-p10-img04.png", "/assets/extracted/pdf-p10-img06.png"]
   },
   {
     name: "Watsons x OB Usagyuuun KOL Campaign",
     category: "Character collaboration",
-    image: "/assets/extracted/pdf-p11-img03.png",
     stills: ["/assets/extracted/pdf-p11-img02.png", "/assets/extracted/pdf-p11-img03.png", "/assets/extracted/pdf-p11-img06.png"]
   },
   {
     name: "Galaxy AI S25 Ultra KOL Campaign",
     category: "Technology",
-    image: "/assets/extracted/pdf-p13-img02.png",
     stills: ["/assets/extracted/pdf-p13-img02.png", "/assets/extracted/pdf-p13-img04.png", "/assets/extracted/pdf-p13-img06.png"]
   },
   {
     name: "Mizumi Sunscreen KOL Campaign",
     category: "Skincare",
-    image: "/assets/extracted/pdf-p14-img02.png",
     stills: ["/assets/extracted/pdf-p14-img02.png", "/assets/extracted/pdf-p14-img04.png", "/assets/extracted/pdf-p14-img06.png"]
   },
   {
     name: "Maybelline Lifter Gloss HYA KOL",
     category: "Makeup",
-    image: "/assets/extracted/pdf-p20-img04.png",
     stills: ["/assets/extracted/pdf-p20-img02.png", "/assets/extracted/pdf-p20-img04.png", "/assets/extracted/pdf-p20-img06.png"]
   },
   {
     name: "Clear Men Anti-Dandruff Scalp Pro KOL",
     category: "Men's care",
-    image: "/assets/extracted/pdf-p22-img05.png",
     stills: ["/assets/extracted/pdf-p22-img02.png", "/assets/extracted/pdf-p22-img04.png", "/assets/extracted/pdf-p22-img05.png"]
   }
+];
+
+const heroStills = campaigns.flatMap((campaign) => campaign.stills);
+
+const affiliateStills = [
+  "/assets/extracted/pdf-p14-img04.png",
+  "/assets/extracted/pdf-p14-img06.png",
+  "/assets/extracted/pdf-p19-img02.png",
+  "/assets/extracted/pdf-p20-img02.png",
+  "/assets/extracted/pdf-p20-img04.png"
 ];
 
 const categories = [
@@ -122,9 +125,28 @@ const assetPath = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH || ""}$
 
 export default function Home() {
   const [activeCampaign, setActiveCampaign] = useState(0);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
   const campaign = campaigns[activeCampaign];
 
   const repeatedBrands = useMemo(() => [...brands, ...brands], []);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const updateTimer = () => {
+      if (timer) clearInterval(timer);
+      if (!reduceMotion.matches) {
+        timer = setInterval(() => setHeroImageIndex((index) => (index + 1) % heroStills.length), 3200);
+      }
+    };
+    updateTimer();
+    reduceMotion.addEventListener("change", updateTimer);
+    return () => {
+      if (timer) clearInterval(timer);
+      reduceMotion.removeEventListener("change", updateTimer);
+    };
+  }, []);
 
   useEffect(() => {
     const sections = document.querySelectorAll<HTMLElement>(".section-reveal");
@@ -205,8 +227,17 @@ export default function Home() {
             </h1>
           </div>
           <div className="hero-panel" aria-label="Campaign visuals from SEEKER presentation">
-            <img src={assetPath("/assets/extracted/pdf-p13-img02.png")} alt="" className="hero-portrait" />
-            <img src={assetPath("/assets/extracted/pdf-p10-img02.png")} alt="" className="hero-lens" />
+            {[-1, 0, 1].map((offset) => {
+              const still = heroStills[(heroImageIndex + offset + heroStills.length) % heroStills.length];
+              return (
+                <div className={`campaign-phone hero-phone hero-phone-${offset + 1}`} key={offset}>
+                  <div className="campaign-phone-screen">
+                    <img className="hero-phone-image" src={assetPath(still)} alt="" key={still} />
+                  </div>
+                  <span className="campaign-phone-notch" aria-hidden="true" />
+                </div>
+              );
+            })}
           </div>
         </div>
         <div className="hero-bottom">
@@ -234,7 +265,6 @@ export default function Home() {
       <section id="work" className="work-section section-pad section-reveal">
         <div className="work-heading">
           <h2>Featured work</h2>
-          <p>Named campaigns from the SEEKER presentation, shown as a clickable prototype portfolio.</p>
         </div>
         <div className="work-grid">
           <div className="campaign-list" role="tablist" aria-label="Featured campaigns">
@@ -248,20 +278,22 @@ export default function Home() {
                 aria-selected={activeCampaign === index}
               >
                 <span>{item.name}</span>
-                <small>{item.category}</small>
               </button>
             ))}
           </div>
           <div className="campaign-stage" role="tabpanel">
             <div className="campaign-content" key={campaign.name}>
-              <img src={assetPath(campaign.image)} alt={`${campaign.name} campaign collage`} className="campaign-main" />
               <div className="campaign-meta">
-                <p>{campaign.category}</p>
                 <h3>{campaign.name}</h3>
               </div>
-              <div className="campaign-stills">
-                {campaign.stills.map((still) => (
-                  <img src={assetPath(still)} alt="" key={still} />
+              <div className="campaign-stills" tabIndex={0} aria-label={`${campaign.name} images`}>
+                {campaign.stills.map((still, index) => (
+                  <div className="campaign-phone" key={still}>
+                    <div className="campaign-phone-screen">
+                      <img src={assetPath(still)} alt={`${campaign.name} image ${index + 1}`} />
+                    </div>
+                    <span className="campaign-phone-notch" aria-hidden="true" />
+                  </div>
                 ))}
               </div>
             </div>
@@ -284,16 +316,35 @@ export default function Home() {
           <span>Macro 500k-1m</span>
         </div>
         <div className="creator-track">
-          {creatorHandles.map((creator) => (
-            <article className="creator-card" key={creator.handle}>
-              <img src={assetPath(creator.image)} alt={`TikTok profile ${creator.handle}`} />
-              <p>TikTok: {creator.handle}</p>
-            </article>
-          ))}
+          <div className="creator-loop">
+            <div className="creator-group">
+              {creatorHandles.map((creator) => (
+                <article className="creator-card" key={creator.handle}>
+                  <img src={assetPath(creator.image)} alt={`TikTok profile ${creator.handle}`} />
+                  <p>TikTok: {creator.handle}</p>
+                </article>
+              ))}
+            </div>
+            <div className="creator-group" aria-hidden="true">
+              {creatorHandles.map((creator) => (
+                <article className="creator-card" key={creator.handle}>
+                  <img src={assetPath(creator.image)} alt="" />
+                  <p>TikTok: {creator.handle}</p>
+                </article>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="category-cloud" aria-label="Creator categories">
+        <div className="category-cloud" role="group" aria-label="Creator categories">
           {categories.map((category) => (
-            <span key={category}>{category}</span>
+            <button
+              key={category}
+              type="button"
+              aria-pressed={activeCategory === category}
+              onClick={() => setActiveCategory(activeCategory === category ? null : category)}
+            >
+              {category}
+            </button>
           ))}
         </div>
       </section>
@@ -321,14 +372,19 @@ export default function Home() {
 
       <section className="affiliate-section section-pad section-reveal">
         <div className="affiliate-image">
-          <img src={assetPath("/assets/extracted/pdf-p19-img02.png")} alt="Creator content visual from SEEKER presentation" />
+          <div className="affiliate-image-track">
+            {[...affiliateStills, ...affiliateStills].map((still, index) => (
+              <img
+                src={assetPath(still)}
+                alt={index < affiliateStills.length ? "Creator content visual from SEEKER presentation" : ""}
+                aria-hidden={index >= affiliateStills.length}
+                key={`${still}-${index}`}
+              />
+            ))}
+          </div>
         </div>
         <div className="affiliate-copy">
           <h2>Influencer plus affiliate.</h2>
-          <p>
-            SEEKER presents affiliate marketing as performance-based creator work: creators review products, share
-            links or codes, and help brands measure sales, clicks, and conversion.
-          </p>
           <ul>
             <li>Recruit creators who can produce affiliate clips at scale.</li>
             <li>Select creators that fit the product.</li>
